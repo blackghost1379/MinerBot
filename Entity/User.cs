@@ -1,9 +1,14 @@
+using System.Text.Json.Serialization;
+using Microsoft.EntityFrameworkCore;
+
 namespace BtcMiner.Entity
 {
+    [Index(nameof(TelegramId), IsUnique = true)]
     public class User
     {
         public int Id { get; set; }
-        public required string UserId { get; set; }
+
+        public required string TelegramId { get; set; }
 
         public string? FirstName { get; set; }
 
@@ -21,5 +26,11 @@ namespace BtcMiner.Entity
         public int Balance { get; set; } = 0;
         public double BtcBalance { get; set; } = 0.0;
         public DateTime Created { get; set; } = DateTime.Now;
+
+        [JsonIgnore]
+        public IList<Referal>? Referals { get; set; }
+
+        [JsonIgnore]
+        public IList<Transaction>? Transactions { get; set; }
     }
 }

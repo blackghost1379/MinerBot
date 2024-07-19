@@ -98,7 +98,7 @@ if (app.Environment.IsDevelopment())
         {
             var u = new User
             {
-                UserId = model.UserId,
+                TelegramId = model.UserId,
                 FirstName = model.FirstName,
                 LastName = model.LastName,
                 Username = model.Username,

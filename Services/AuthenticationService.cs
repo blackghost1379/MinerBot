@@ -5,6 +5,7 @@ using System.Text;
 using BtcMiner.Entity;
 using BtcMiner.Helpers;
 using BtcMiner.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -23,14 +24,14 @@ namespace BtcMiner.Services
 
         public AuthResponse? Authenticate(AuthRequest model)
         {
-            var u = _minerDb.Users.FirstOrDefault(x => x.UserId == model.UserId);
+            var u = _minerDb.Users.FirstOrDefault(x => x.TelegramId == model.UserId);
 
             if (u == null)
             {
                 // register user
                 u = new User
                 {
-                    UserId = model.UserId,
+                    TelegramId = model.UserId,
                     FirstName = model.FirstName,
                     LastName = model.LastName,
                     Username = model.Username,
@@ -47,17 +48,12 @@ namespace BtcMiner.Services
             if (!model.ReffererId.IsNullOrEmpty())
             {
                 var refferal = AddRefferal(_minerDb, model);
-                Console.WriteLine("ReffererId : " + model.ReffererId);
             }
 
             // Generate Token for users
             var token = GenerateJwtToken(u);
 
-            return new AuthResponse
-            {
-                Message = "Login Success",
-                Data = new { Token = token, User = u, }
-            };
+            return new AuthResponse { Message = "Login Success", Data = new { Token = token } };
         }
 
         public IEnumerable<User> GetAllUsers()
@@ -75,7 +71,11 @@ namespace BtcMiner.Services
             return new AuthResponse
             {
                 Message = "Ok",
-                Data = _minerDb.Tasks.Where(x => x.UserId == user!.UserId).ToList(),
+                Data = _minerDb
+                    .UserTasks.Where(x => x.UserId == user.Id)
+                    .Include(x => x.User)
+                    .Include(x => x.Task)
+                    .ToList(),
             };
         }
 
@@ -84,7 +84,7 @@ namespace BtcMiner.Services
             return new AuthResponse
             {
                 Message = "Ok",
-                Data = _minerDb.Referals.Where(x => x.UserId == user!.UserId).ToList(),
+                Data = _minerDb.Referals.Where(x => x.Id == user.Id).ToList(),
             };
         }
 
@@ -99,8 +99,8 @@ namespace BtcMiner.Services
                     new[]
                     {
                         new Claim("id", user.Id.ToString()),
-                        new Claim(ClaimTypes.Name, user.UserId.ToString()),
-                        new Claim("tg_id", user.UserId.ToString())
+                        new Claim(ClaimTypes.Name, user.TelegramId.ToString()),
+                        new Claim("tg_id", user.TelegramId.ToString())
                     }
                 ),
                 // set the token expiry to a day
@@ -118,7 +118,7 @@ namespace BtcMiner.Services
 
         private Referal? AddRefferal(MinerDb minerDb, AuthRequest model)
         {
-            var refferer = minerDb.Users.FirstOrDefault(x => x.UserId == model.ReffererId);
+            var refferer = minerDb.Users.FirstOrDefault(x => x.TelegramId == model.ReffererId);
 
             if (refferer == null)
             {
@@ -127,10 +127,11 @@ namespace BtcMiner.Services
 
             var r = new Referal
             {
-                UserId = model.ReffererId!,
-                FirstName = refferer.FirstName,
-                LastName = refferer.LastName,
-                ProfilePicUrl = refferer.ProfilePicUrl
+                UserId = refferer.Id,
+                TelegramId = model.UserId,
+                FirstName = model.FirstName,
+                LastName = model.LastName,
+                ProfilePicUrl = model.ProfilePicUrl
             };
             minerDb.Referals.Add(r);
             minerDb.SaveChanges();
@@ -156,7 +157,15 @@ namespace BtcMiner.Services
                 };
             }
 
-            var t = new Transaction { UserId = user.UserId, Type = TransactionType.Claim };
+            var t = new Transaction { UserId = user.Id, Type = TransactionType.Claim };
+
+            // add user btc balance
+            var newBalance = user.BtcBalance + _appSettings.AddBalance;
+            _minerDb
+                .Users.Where(u => u.Id == user.Id)
+                .ExecuteUpdate(u =>
+                    u.SetProperty(p => p.BtcBalance, user.BtcBalance + _appSettings.AddBalance)
+                );
 
             _minerDb.Transactions.Add(t);
             _minerDb.SaveChanges();
@@ -169,7 +178,8 @@ namespace BtcMiner.Services
                 {
                     Min = 0,
                     Hour = 8,
-                    Sec = 0
+                    Sec = 0,
+                    Balance = user.BtcBalance + _appSettings.AddBalance
                 },
                 StatusCode = StatusCodes.Status200OK
             };
@@ -228,7 +238,7 @@ namespace BtcMiner.Services
         {
             var LastTransaction = _minerDb
                 .Transactions.OrderBy(x => x.Created)
-                .LastOrDefault(x => x.UserId == user.UserId && x.Type == TransactionType.Claim);
+                .LastOrDefault(x => x.UserId == user.Id && x.Type == TransactionType.Claim);
 
             if (LastTransaction == null)
             {
@@ -251,8 +261,6 @@ namespace BtcMiner.Services
                     RemainTime = new DateTime(remianTime.Ticks)
                 };
             }
-
-            throw new Exception("Remain Time Hours = " + remianTime.TotalHours);
         }
     }
 }

@@ -1,15 +1,15 @@
-using BtcMiner.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace BtcMiner.Entity
 {
-    [Index(nameof(UserId), IsUnique = true)]
-    public class Transaction
+    [PrimaryKey(nameof(Id))]
+    public class UserTask
     {
         public int Id { get; set; }
+        public User? User { get; set; }
         public int UserId { get; set; }
-        public User User { get; set; } = null!;
-        public int Type { get; set; } = TransactionType.Claim;
+        public Task? Task { get; set; }
+        public int TaskId { get; set; }
         public DateTime Created { get; set; } = DateTime.Now;
     }
 }
