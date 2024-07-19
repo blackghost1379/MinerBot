@@ -1,0 +1,6 @@
+bin
+obj
+BtcMinerDB.db
+BtcMinerDB.db-shm
+BtcMinerDB.db-wal
+Migrations
