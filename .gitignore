@@ -5,3 +5,5 @@ BtcMinerDB.db-shm
 BtcMinerDB.db-wal
 Migrations
 BtcMiner.db
+
+BtcMiner.db
