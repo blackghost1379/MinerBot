@@ -14,7 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("MysqlBtcMinerDb");
 builder.Services.AddDbContext<MinerDb>(options =>
 {
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+    options.UseMySql(connectionString, ServerVersion.Parse("10.6.18-MariaDB-0ubuntu0.22.04.1 Ubuntu 22.04"));
 });
 
 builder.Services.AddEndpointsApiExplorer();
