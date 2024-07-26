@@ -52,8 +52,28 @@ namespace BtcMiner.Services
 
             // Generate Token for users
             var token = GenerateJwtToken(u);
+            var checkResp = CheckCanClaim(u);
 
-            return new AuthResponse { Message = "Login Success", Data = new { Token = token } };
+            return new AuthResponse
+            {
+                Message = "Login Success",
+                Data = new
+                {
+                    Token = token,
+                    Info = new
+                    {
+                        Time = DateTime.Now.ToString(),
+                        BtcBlance = u.BtcBalance,
+                        Balance = u.Balance,
+                        ClaimRemainTime = new
+                        {
+                            Min = checkResp.RemainTime.Minute,
+                            Hour = checkResp.RemainTime.Hour,
+                            Sec = checkResp.RemainTime.Second
+                        }
+                    }
+                }
+            };
         }
 
         public IEnumerable<User> GetAllUsers()
@@ -84,7 +104,15 @@ namespace BtcMiner.Services
             return new AuthResponse
             {
                 Message = "Ok",
-                Data = _minerDb.Referals.Where(x => x.Id == user.Id).ToList(),
+                Data = _minerDb
+                    .Referals.Where(x => x.Id == user.Id)
+                    .Select(refral => new
+                    {
+                        FirstName = refral.FirstName,
+                        LastName = refral.LastName,
+                        ProfilePicUrl = refral.ProfilePicUrl
+                    })
+                    .ToList(),
             };
         }
 
