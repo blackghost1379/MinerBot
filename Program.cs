@@ -75,6 +75,17 @@ builder
     });
 builder.Services.AddAuthorization();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(
+        "MyPolicy",
+        builder =>
+        {
+            builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+        }
+    );
+});
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -89,9 +100,15 @@ if (app.Environment.IsDevelopment())
         "/users",
         (MinerDb db) =>
         {
-            return db.Users.ToList();
+            return new
+            {
+                Status = StatusCodes.Status200OK,
+                Data = db.Users.ToList(),
+                Message = "Ok"
+            };
         }
     );
+    app.MapGet("/", () => "Hello World!");
     app.MapPost(
         "/users",
         (AuthRequest model, MinerDb db) =>
@@ -109,19 +126,18 @@ if (app.Environment.IsDevelopment())
             };
             db.Users.Add(u);
             db.SaveChanges();
-            return db.Users.ToList();
+            return new
+            {
+                Status = StatusCodes.Status200OK,
+                data = db.Users.ToList(),
+                Message = "Ok"
+            };
         }
     );
-}
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHttpsRedirection();
 }
 
 app.UseMiddleware<JwtMiddleware>();
 app.UseAuthorization();
-
-app.MapGet("/", () => "Hello World!");
 
 app.MapPost(
     "/login",
