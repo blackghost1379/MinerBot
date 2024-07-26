@@ -11,9 +11,11 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
-var connectionString =
-    builder.Configuration.GetConnectionString("BtcMinerDb") ?? "Data Source = BtcMiner.db";
-builder.Services.AddSqlite<MinerDb>(builder.Configuration.GetConnectionString("BtcMinerDb"));
+var connectionString = builder.Configuration.GetConnectionString("MysqlBtcMinerDb");
+builder.Services.AddDbContext<MinerDb>(options =>
+{
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -134,6 +136,7 @@ if (app.Environment.IsDevelopment())
             };
         }
     );
+    app.UseCors(options => options.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 }
 
 app.UseMiddleware<JwtMiddleware>();
@@ -204,5 +207,7 @@ app.MapGet(
             authenticationService.GetRemainClaimTime(context.Items["User"] as User)
     )
     .RequireAuthorization();
+
+//app.UseCors(options => options.WithOrigins("btc-miner-rent.shop").AllowAnyHeader().AllowAnyMethod());
 
 app.Run();
