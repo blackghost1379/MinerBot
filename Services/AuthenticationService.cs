@@ -67,9 +67,10 @@ namespace BtcMiner.Services
                         Balance = u.Balance,
                         ClaimRemainTime = new
                         {
-                            Min = checkResp.RemainTime.Minute,
-                            Hour = checkResp.RemainTime.Hour,
-                            Sec = checkResp.RemainTime.Second
+                            Min = checkResp.RemainTime.Minutes,
+                            Hour = checkResp.RemainTime.Hours,
+                            Sec = checkResp.RemainTime.Seconds,
+                            State = checkResp.State
                         }
                     }
                 }
@@ -93,7 +94,6 @@ namespace BtcMiner.Services
                 Message = "Ok",
                 Data = _minerDb
                     .UserTasks.Where(x => x.UserId == user.Id)
-                    .Include(x => x.User)
                     .Include(x => x.Task)
                     .ToList(),
             };
@@ -105,7 +105,7 @@ namespace BtcMiner.Services
             {
                 Message = "Ok",
                 Data = _minerDb
-                    .Referals.Where(x => x.Id == user.Id)
+                    .Referals.Where(x => x.UserId == user.Id)
                     .Select(refral => new
                     {
                         FirstName = refral.FirstName,
@@ -176,9 +176,10 @@ namespace BtcMiner.Services
                 {
                     Data = new
                     {
-                        Min = checkResponse.RemainTime.Minute,
-                        Hour = checkResponse.RemainTime.Hour,
-                        Sec = checkResponse.RemainTime.Second
+                        Min = checkResponse.RemainTime.Minutes,
+                        Hour = checkResponse.RemainTime.Hours,
+                        Sec = checkResponse.RemainTime.Seconds,
+                        State = checkResponse.State
                     },
                     Message = "Ok",
                     StatusCode = StatusCodes.Status207MultiStatus
@@ -198,14 +199,14 @@ namespace BtcMiner.Services
             _minerDb.Transactions.Add(t);
             _minerDb.SaveChanges();
 
-            // send 8 hour to reset
+            // send  hour to reset
             return new AuthResponse
             {
                 Message = "Ok",
                 Data = new
                 {
                     Min = 0,
-                    Hour = 8,
+                    Hour = _appSettings.ClaimTimeInHour,
                     Sec = 0,
                     Balance = user.BtcBalance + _appSettings.AddBalance
                 },
@@ -231,35 +232,21 @@ namespace BtcMiner.Services
         public AuthResponse GetRemainClaimTime(User? user)
         {
             var checkResponse = CheckCanClaim(user!);
-            if (checkResponse.State == ClaimStatus.CANT)
+
+            return new AuthResponse
             {
-                return new AuthResponse
+                Data = new
                 {
-                    Data = new
-                    {
-                        Min = checkResponse.RemainTime.Minute,
-                        Hour = checkResponse.RemainTime.Hour,
-                        Sec = checkResponse.RemainTime.Second
-                    },
-                    Message = "Ok",
-                    StatusCode = StatusCodes.Status207MultiStatus
-                };
-            }
-            else
-            {
-                // send 8 hour to reset
-                return new AuthResponse
-                {
-                    Message = "Ok",
-                    Data = new
-                    {
-                        Min = 0,
-                        Hour = 0,
-                        Sec = 0
-                    },
-                    StatusCode = StatusCodes.Status200OK
-                };
-            }
+                    Min = checkResponse.RemainTime.Minutes,
+                    Hour = checkResponse.RemainTime.Hours,
+                    Sec = checkResponse.RemainTime.Seconds,
+                    State = checkResponse.State
+                },
+                Message = "Ok",
+                StatusCode = checkResponse.State
+                    ? StatusCodes.Status200OK
+                    : StatusCodes.Status207MultiStatus
+            };
         }
 
         private ClaimStatus CheckCanClaim(User user)
@@ -270,25 +257,84 @@ namespace BtcMiner.Services
 
             if (LastTransaction == null)
             {
-                return new ClaimStatus { State = ClaimStatus.CAN, };
+                return new ClaimStatus
+                {
+                    State = ClaimStatus.CAN,
+                    RemainTime = new TimeSpan(_appSettings.ClaimTimeInHour, 0, 0)
+                };
             }
 
             var remianTime = DateTime.Now - LastTransaction.Created;
 
-            if (remianTime.TotalHours > _appSettings.ClaimTimeInHour)
+            if (remianTime.Hours > _appSettings.ClaimTimeInHour)
             {
                 // user can Claim
-                return new ClaimStatus { State = ClaimStatus.CAN, };
+                return new ClaimStatus
+                {
+                    State = ClaimStatus.CAN,
+                    RemainTime = new TimeSpan(_appSettings.ClaimTimeInHour, 0, 0)
+                };
             }
             else
             {
                 //  user cant Claim
-                return new ClaimStatus
+                var time = new TimeSpan(_appSettings.ClaimTimeInHour, 0, 0) - remianTime;
+                return new ClaimStatus { State = ClaimStatus.CANT, RemainTime = time };
+            }
+        }
+
+        public AuthResponse CheckTask(User? user, CheckTaskRequest request)
+        {
+            var userTask = _minerDb
+                .UserTasks.Where(ut => ut.TaskId == request.taskId && ut.UserId == user!.Id)
+                .Include(ut => ut.Task)
+                .FirstOrDefault();
+
+            if (userTask!.Task!.Type == TaskTypes.CHECK_CODE)
+            {
+                // check task code
+                var checkResp = userTask.Task.Value == request.TaskData;
+                return new AuthResponse
                 {
-                    State = ClaimStatus.CANT,
-                    RemainTime = new DateTime(remianTime.Ticks)
+                    Message = "Ok",
+                    StatusCode = checkResp
+                        ? StatusCodes.Status406NotAcceptable
+                        : StatusCodes.Status200OK,
+                    Data = new { result = checkResp }
                 };
             }
+            else if (userTask.Task.Type == TaskTypes.JOIN && userTask.Task.Name == "Telegram")
+            {
+                // check join channel
+            }
+
+            return new AuthResponse
+            {
+                Message = "Ok",
+                StatusCode =
+                    userTask == null ? StatusCodes.Status406NotAcceptable : StatusCodes.Status200OK,
+                Data = new { result = userTask == null ? false : true }
+            };
+        }
+
+        public AuthResponse DoTask(User? user)
+        {
+            throw new NotImplementedException();
+        }
+
+        public AuthResponse ListTasks(User? user)
+        {
+            return new AuthResponse
+            {
+                Message = "OK",
+                Data = _minerDb
+                    .Tasks.Where(t =>
+                        _minerDb.UserTasks.FirstOrDefault(ut => ut.TaskId == t.Id) == null
+                            ? true
+                            : false
+                    )
+                    .ToList()
+            };
         }
     }
 }

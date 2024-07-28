@@ -2,10 +2,10 @@ namespace BtcMiner.Helpers
 {
     public class ClaimStatus
     {
-        public static int CAN = 1;
-        public static int CANT = 0;
+        public static bool CAN = true;
+        public static bool CANT = false;
 
-        public DateTime RemainTime { get; set; }
-        public int State { get; set; } = CAN;
+        public TimeSpan RemainTime { get; set; }
+        public bool State { get; set; } = CAN;
     }
 }

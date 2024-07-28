@@ -1,4 +1,5 @@
 using BtcMiner.Entity;
+using BtcMiner.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 public class MinerDb : DbContext
@@ -16,7 +17,7 @@ public class MinerDb : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        //DbSeed(modelBuilder);
+        DbSeed(modelBuilder);
     }
 
     private void DbSeed(ModelBuilder modelBuilder)
@@ -28,19 +29,24 @@ public class MinerDb : DbContext
                 {
                     Id = 1,
                     TelegramId = "170116448",
-                    ProfilePicUrl = "https://googel.com/gb.png",
-                    FirstName = "Mohammad",
-                    LastName = "Imani",
-                    Username = "mohk1379"
+                    ProfilePicUrl =
+                        "https://api.telegram.org/file/bot6904685786:AAH9dBzy8aONIMGKKVWdhDPLJDllEHXn7R0/photos/file_19.jpg",
+                    FirstName = "</Mohammad>",
+                    LastName = "",
+                    Username = "mohammad_imanni",
+                    AllowWritePm = true
                 },
                 new User
                 {
                     Id = 2,
-                    TelegramId = "170116441",
-                    ProfilePicUrl = "https://googel.com/gb.png",
-                    FirstName = "Vahid",
-                    LastName = "Aliverdi",
-                    Username = "mohk1359"
+                    TelegramId = "848400596",
+                    ProfilePicUrl =
+                        "https://api.telegram.org/file/bot6904685786:AAH9dBzy8aONIMGKKVWdhDPLJDllEHXn7R0/photos/file_17.jpg",
+                    FirstName = "Mohammad Reza",
+                    LastName = "",
+                    Username = "MRE01",
+                    AllowWritePm = true,
+                    IsPremium = true
                 }
             );
         modelBuilder
@@ -49,30 +55,58 @@ public class MinerDb : DbContext
                 new BtcMiner.Entity.Task
                 {
                     Id = 1,
-                    Data = "https://x.com/BtcMiner",
+                    Value = "https://x.com/BtcMiner",
                     Name = "Twitter",
-                    Type = 0
+                    Type = TaskTypes.JOIN
                 },
                 new BtcMiner.Entity.Task
                 {
                     Id = 2,
-                    Data = "https://facebook.com/BtcMiner",
+                    Value = "https://facebook.com/BtcMiner",
                     Name = "FaceBook",
-                    Type = 1
+                    Type = TaskTypes.JOIN
                 },
                 new BtcMiner.Entity.Task
                 {
                     Id = 3,
-                    Data = "https://youtube.com/BtcMiner",
+                    Value = "https://youtube.com/BtcMiner",
                     Name = "youTube",
-                    Type = 2
+                    Type = TaskTypes.JOIN
                 },
                 new BtcMiner.Entity.Task
                 {
                     Id = 4,
-                    Data = "https://t.me/BtcMiner",
+                    Value = "https://t.me/BtcMiner",
                     Name = "Telegram",
-                    Type = 2
+                    Type = TaskTypes.JOIN
+                },
+                new BtcMiner.Entity.Task
+                {
+                    Id = 5,
+                    Value = "5",
+                    Name = "Invite 5 Friend",
+                    Type = TaskTypes.INVITE
+                },
+                new BtcMiner.Entity.Task
+                {
+                    Id = 6,
+                    Value = "10",
+                    Name = "Invite 10 Friend",
+                    Type = TaskTypes.INVITE
+                },
+                new BtcMiner.Entity.Task
+                {
+                    Id = 7,
+                    Value = "15",
+                    Name = "Invite 15 Friend",
+                    Type = TaskTypes.INVITE
+                },
+                new BtcMiner.Entity.Task
+                {
+                    Id = 8,
+                    Value = "20",
+                    Name = "Invite 20 Friend",
+                    Type = TaskTypes.INVITE
                 }
             );
 

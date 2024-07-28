@@ -14,7 +14,10 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("MysqlBtcMinerDb");
 builder.Services.AddDbContext<MinerDb>(options =>
 {
-    options.UseMySql(connectionString, ServerVersion.Parse("10.6.18-MariaDB-0ubuntu0.22.04.1 Ubuntu 22.04"));
+    options.UseMySql(
+        connectionString,
+        ServerVersion.Parse("10.6.18-MariaDB-0ubuntu0.22.04.1 Ubuntu 22.04")
+    );
 });
 
 builder.Services.AddEndpointsApiExplorer();
@@ -168,9 +171,16 @@ app.MapGet(
     )
     .RequireAuthorization();
 
+app.MapPost(
+        "/tasks",
+        (HttpContext context, IAuthenticationService authenticationService) =>
+            authenticationService.DoTask(context.Items["User"] as User)
+    )
+    .RequireAuthorization();
+
 app.MapGet(
         "/refferals",
-        (MinerDb db, HttpContext context, IAuthenticationService authenticationService) =>
+        (HttpContext context, IAuthenticationService authenticationService) =>
         {
             var user = context.Items["User"] as User;
             return authenticationService.GetReferals(user!);
@@ -205,6 +215,20 @@ app.MapGet(
         "/time/remain",
         (IAuthenticationService authenticationService, HttpContext context) =>
             authenticationService.GetRemainClaimTime(context.Items["User"] as User)
+    )
+    .RequireAuthorization();
+
+app.MapGet(
+        "/check/task/{taskId}",
+        (BtcMiner.Models.CheckTaskRequest request, IAuthenticationService authenticationService, HttpContext context) =>
+            authenticationService.CheckTask(context.Items["User"] as User, request)
+    )
+    .RequireAuthorization();
+
+app.MapGet(
+        "/remain/tasks",
+        (IAuthenticationService authenticationService, HttpContext context) =>
+            authenticationService.ListTasks(context.Items["User"] as User)
     )
     .RequireAuthorization();
 
