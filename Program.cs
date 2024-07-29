@@ -218,10 +218,13 @@ app.MapGet(
     )
     .RequireAuthorization();
 
-app.MapGet(
-        "/check/task/{taskId}",
-        (BtcMiner.Models.CheckTaskRequest request, IAuthenticationService authenticationService, HttpContext context) =>
-            authenticationService.CheckTask(context.Items["User"] as User, request)
+app.MapPost(
+        "/check/tasks/",
+        (
+            [FromBody] BtcMiner.Models.CheckTaskRequest request,
+            IAuthenticationService authenticationService,
+            HttpContext context
+        ) => authenticationService.CheckTask(context.Items["User"] as User, request)
     )
     .RequireAuthorization();
 

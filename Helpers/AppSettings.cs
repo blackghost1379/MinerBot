@@ -7,5 +7,6 @@ namespace BtcMiner.Helpers
         public int ClaimTimeInHour { get; set; }
         public int ClaimTimeInSecond { get; set; }
         public required string BotToken { get; set; }
+        public required string ChannelId { get; set; }
     }
 }

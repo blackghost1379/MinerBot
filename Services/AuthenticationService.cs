@@ -1,5 +1,6 @@
 using System.Data.Common;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Security.Claims;
 using System.Text;
 using BtcMiner.Entity;
@@ -8,6 +9,7 @@ using BtcMiner.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 
 namespace BtcMiner.Services
 {
@@ -285,35 +287,69 @@ namespace BtcMiner.Services
 
         public AuthResponse CheckTask(User? user, CheckTaskRequest request)
         {
-            var userTask = _minerDb
-                .UserTasks.Where(ut => ut.TaskId == request.taskId && ut.UserId == user!.Id)
-                .Include(ut => ut.Task)
-                .FirstOrDefault();
+            var task = _minerDb.Tasks.Where(t => t.Id == request.TaskId).FirstOrDefault();
 
-            if (userTask!.Task!.Type == TaskTypes.CHECK_CODE)
+            if (task == null)
+            {
+                return new AuthResponse
+                {
+                    Message = "Fail",
+                    StatusCode = StatusCodes.Status406NotAcceptable,
+                    Data = new { }
+                };
+            }
+
+            if (task!.Type == TaskTypes.CHECK_CODE)
             {
                 // check task code
-                var checkResp = userTask.Task.Value == request.TaskData;
+                var checkResp = task.Value == request.TaskData;
+
+                if (checkResp)
+                {
+                    // add balance
+                    _minerDb
+                        .Users.Where(u => u.Id == user!.Id)
+                        .ExecuteUpdate(u =>
+                            u.SetProperty(p => p.BtcBalance, user!.BtcBalance + task.BtcBalance)
+                        );
+                }
+
                 return new AuthResponse
                 {
                     Message = "Ok",
                     StatusCode = checkResp
-                        ? StatusCodes.Status406NotAcceptable
-                        : StatusCodes.Status200OK,
+                        ? StatusCodes.Status200OK
+                        : StatusCodes.Status406NotAcceptable,
                     Data = new { result = checkResp }
                 };
             }
-            else if (userTask.Task.Type == TaskTypes.JOIN && userTask.Task.Name == "Telegram")
+            else if (task.Type == TaskTypes.JOIN && task.Name == "Telegram")
             {
                 // check join channel
+                var memberCheckResp = CheckChannelMember(user!);
+
+                if (memberCheckResp!.Ok)
+                {
+                    // add balance
+                    _minerDb
+                        .Users.Where(u => u.Id == user!.Id)
+                        .ExecuteUpdate(u =>
+                            u.SetProperty(p => p.BtcBalance, user!.BtcBalance + task.BtcBalance)
+                        );
+                    return new AuthResponse
+                    {
+                        Message = "Ok",
+                        StatusCode = StatusCodes.Status200OK,
+                        Data = new { }
+                    };
+                }
             }
 
             return new AuthResponse
             {
                 Message = "Ok",
-                StatusCode =
-                    userTask == null ? StatusCodes.Status406NotAcceptable : StatusCodes.Status200OK,
-                Data = new { result = userTask == null ? false : true }
+                StatusCode = StatusCodes.Status200OK,
+                Data = new { }
             };
         }
 
@@ -335,6 +371,43 @@ namespace BtcMiner.Services
                     )
                     .ToList()
             };
+        }
+
+        /// <summary>
+        /// Checks if the user is a member of the channel
+        /// </summary>
+        /// <returns></returns>
+        private TelegramChatMemberResponse? CheckChannelMember(User user)
+        {
+            // ساخت درخواست ارسال پیام
+
+            var handler = new HttpClientHandler();
+            handler.Proxy = new WebProxy("socks5://192.168.238.75:10808");
+            using (var client = new HttpClient(handler))
+            {
+                var response = client.GetAsync(
+                    "https://api.telegram.org/bot"
+                        + _appSettings.BotToken
+                        + "/getchatmember?chat_id="
+                        + _appSettings.ChannelId
+                        + "&user_id="
+                        + user.TelegramId
+                );
+
+                if (response.Result.IsSuccessStatusCode)
+                {
+                    var responseString = response.Result.Content.ReadAsStringAsync();
+                    var responseObject = JsonConvert.DeserializeObject<TelegramChatMemberResponse>(
+                        responseString.Result
+                    );
+                    Console.WriteLine(responseObject!.Ok);
+                    return responseObject;
+                }
+                else
+                {
+                    return null;
+                }
+            }
         }
     }
 }
