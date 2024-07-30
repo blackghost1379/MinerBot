@@ -9,7 +9,6 @@ using BtcMiner.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json;
 
 namespace BtcMiner.Services
 {
@@ -18,10 +17,17 @@ namespace BtcMiner.Services
         private readonly AppSettings _appSettings;
         private readonly MinerDb _minerDb;
 
-        public AuthenticationService(IOptions<AppSettings> appSettings, MinerDb minerDb)
+        private readonly ITelegramBotService _botService;
+
+        public AuthenticationService(
+            IOptions<AppSettings> appSettings,
+            MinerDb minerDb,
+            ITelegramBotService botService
+        )
         {
             _appSettings = appSettings.Value;
             _minerDb = minerDb;
+            _botService = botService;
         }
 
         public AuthResponse? Authenticate(AuthRequest model)
@@ -287,13 +293,28 @@ namespace BtcMiner.Services
 
         public AuthResponse CheckTask(User? user, CheckTaskRequest request)
         {
+            var latestTask = _minerDb
+                .UserTasks.Where(ut => ut.TaskId == request.TaskId && ut.UserId == user!.Id)
+                .LastOrDefault();
+
+            if (latestTask != null)
+            {
+                // This task has already been done and the reward has been received
+                return new AuthResponse
+                {
+                    Message = "Task Doned !",
+                    StatusCode = StatusCodes.Status406NotAcceptable,
+                    Data = new { }
+                };
+            }
+
             var task = _minerDb.Tasks.Where(t => t.Id == request.TaskId).FirstOrDefault();
 
             if (task == null)
             {
                 return new AuthResponse
                 {
-                    Message = "Fail",
+                    Message = "Task Not Found",
                     StatusCode = StatusCodes.Status406NotAcceptable,
                     Data = new { }
                 };
@@ -312,6 +333,9 @@ namespace BtcMiner.Services
                         .ExecuteUpdate(u =>
                             u.SetProperty(p => p.BtcBalance, user!.BtcBalance + task.BtcBalance)
                         );
+                    var userTask = new UserTask { TaskId = task.Id, UserId = user!.Id };
+                    _minerDb.UserTasks.Add(userTask);
+                    _minerDb.SaveChanges();
                 }
 
                 return new AuthResponse
@@ -326,9 +350,9 @@ namespace BtcMiner.Services
             else if (task.Type == TaskTypes.JOIN && task.Name == "Telegram")
             {
                 // check join channel
-                var memberCheckResp = CheckChannelMember(user!);
+                var memberCheckResp = _botService.CheckChannelMember(user!);
 
-                if (memberCheckResp!.Ok)
+                if (memberCheckResp)
                 {
                     // add balance
                     _minerDb
@@ -336,10 +360,22 @@ namespace BtcMiner.Services
                         .ExecuteUpdate(u =>
                             u.SetProperty(p => p.BtcBalance, user!.BtcBalance + task.BtcBalance)
                         );
+                    var userTask = new UserTask { TaskId = task.Id, UserId = user!.Id };
+                    _minerDb.UserTasks.Add(userTask);
+                    _minerDb.SaveChanges();
                     return new AuthResponse
                     {
                         Message = "Ok",
                         StatusCode = StatusCodes.Status200OK,
+                        Data = new { }
+                    };
+                }
+                else
+                {
+                    return new AuthResponse
+                    {
+                        Message = "Fail",
+                        StatusCode = StatusCodes.Status406NotAcceptable,
                         Data = new { }
                     };
                 }
@@ -377,37 +413,14 @@ namespace BtcMiner.Services
         /// Checks if the user is a member of the channel
         /// </summary>
         /// <returns></returns>
-        private TelegramChatMemberResponse? CheckChannelMember(User user)
+        private bool CheckChannelMember(User user)
         {
             // ساخت درخواست ارسال پیام
 
             var handler = new HttpClientHandler();
             handler.Proxy = new WebProxy("socks5://192.168.238.75:10808");
-            using (var client = new HttpClient(handler))
-            {
-                var response = client.GetAsync(
-                    "https://api.telegram.org/bot"
-                        + _appSettings.BotToken
-                        + "/getchatmember?chat_id="
-                        + _appSettings.ChannelId
-                        + "&user_id="
-                        + user.TelegramId
-                );
 
-                if (response.Result.IsSuccessStatusCode)
-                {
-                    var responseString = response.Result.Content.ReadAsStringAsync();
-                    var responseObject = JsonConvert.DeserializeObject<TelegramChatMemberResponse>(
-                        responseString.Result
-                    );
-                    Console.WriteLine(responseObject!.Ok);
-                    return responseObject;
-                }
-                else
-                {
-                    return null;
-                }
-            }
+            return true;
         }
     }
 }

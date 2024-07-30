@@ -64,7 +64,7 @@ builder.Services.AddSwaggerGen(c =>
 
 builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("AppSettings"));
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
-
+builder.Services.AddSingleton<ITelegramBotService, TelegramBotService>();
 builder
     .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
