@@ -17,6 +17,7 @@ public class MinerDb : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        
         //DbSeed(modelBuilder);
     }
 
