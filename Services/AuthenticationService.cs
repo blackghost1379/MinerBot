@@ -295,7 +295,7 @@ namespace BtcMiner.Services
         {
             var latestTask = _minerDb
                 .UserTasks.Where(ut => ut.TaskId == request.TaskId && ut.UserId == user!.Id)
-                .LastOrDefault();
+                .FirstOrDefault();
 
             if (latestTask != null)
             {
