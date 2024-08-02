@@ -229,9 +229,9 @@ namespace BtcMiner.Services
                         Balance = user.Balance,
                         ClaimRemainTime = new
                         {
-                            Min = _appSettings.ClaimTimeInMin,
-                            Hour = _appSettings.ClaimTimeInHour,
-                            Sec = _appSettings.ClaimTimeInSecond,
+                            Min = checkResponse.RemainTime.Minutes,
+                            Hour = checkResponse.RemainTime.Hours,
+                            Sec = checkResponse.RemainTime.Seconds,
                         }
                     },
                 },
