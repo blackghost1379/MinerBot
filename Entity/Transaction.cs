@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BtcMiner.Entity
 {
-    [Index(nameof(UserId), IsUnique = true)]
     public class Transaction
     {
         public int Id { get; set; }

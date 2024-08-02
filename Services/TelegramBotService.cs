@@ -21,13 +21,13 @@ namespace BtcMiner.Services
             _client = new TelegramBotClient(_appSettings.BotToken);
         }
 
-        bool ITelegramBotService.CheckChannelMember(BtcMiner.Entity.User user)
+        bool ITelegramBotService.CheckChannelMember(BtcMiner.Entity.User user, string channelName)
         {
             try
             {
                 ChatMember member = _client
                     .GetChatMemberAsync(
-                        new ChatId(_appSettings.ChannelId),
+                        new ChatId(channelName),
                         long.Parse(user.TelegramId)
                     )
                     .Result;
@@ -39,7 +39,7 @@ namespace BtcMiner.Services
                     ? true
                     : false;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return false;
             }

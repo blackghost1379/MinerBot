@@ -9,7 +9,7 @@ namespace BtcMiner.Entity
         public string? Name { get; set; }
         public int Type { get; set; }
         public string? Value { get; set; }
-        public double BtcBalance { get; set; } = 0.0;
+        public int Balance { get; set; } = 0;
         public DateTime Created { get; set; } = DateTime.Now;
     }
 }

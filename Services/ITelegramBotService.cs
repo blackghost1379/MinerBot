@@ -4,6 +4,6 @@ namespace BtcMiner.Services
 {
     public interface ITelegramBotService
     {
-        bool CheckChannelMember(User user);
+        bool CheckChannelMember(User user, string channelName);
     }
 }

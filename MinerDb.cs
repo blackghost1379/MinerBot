@@ -17,8 +17,8 @@ public class MinerDb : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        
-        //DbSeed(modelBuilder);
+
+        DbSeed(modelBuilder);
     }
 
     private void DbSeed(ModelBuilder modelBuilder)
@@ -50,6 +50,7 @@ public class MinerDb : DbContext
                     IsPremium = true
                 }
             );
+
         modelBuilder
             .Entity<BtcMiner.Entity.Task>()
             .HasData(
@@ -77,7 +78,7 @@ public class MinerDb : DbContext
                 new BtcMiner.Entity.Task
                 {
                     Id = 4,
-                    Value = "https://t.me/BtcMiner",
+                    Value = "@test_channel156",
                     Name = "Telegram",
                     Type = TaskTypes.JOIN
                 },
@@ -111,7 +112,7 @@ public class MinerDb : DbContext
                 }
             );
 
-        modelBuilder
+        /* modelBuilder
             .Entity<Referal>()
             .HasData(
                 new Referal
@@ -152,5 +153,6 @@ public class MinerDb : DbContext
                     UserId = 2
                 }
             );
+     */
     }
 }

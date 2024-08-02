@@ -171,13 +171,6 @@ app.MapGet(
     )
     .RequireAuthorization();
 
-app.MapPost(
-        "/tasks",
-        (HttpContext context, IAuthenticationService authenticationService) =>
-            authenticationService.DoTask(context.Items["User"] as User)
-    )
-    .RequireAuthorization();
-
 app.MapGet(
         "/refferals",
         (HttpContext context, IAuthenticationService authenticationService) =>

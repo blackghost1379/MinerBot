@@ -26,7 +26,6 @@ namespace BtcMiner.Services
         /// <param name="request"></param>
         /// <returns></returns>
         AuthResponse CheckTask(User? user, CheckTaskRequest request);
-        AuthResponse DoTask(User? user);
         /// <summary>
         /// Return Remain Task Of User
         /// </summary>
