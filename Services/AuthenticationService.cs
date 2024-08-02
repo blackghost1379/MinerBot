@@ -184,10 +184,19 @@ namespace BtcMiner.Services
                 {
                     Data = new
                     {
-                        Min = checkResponse.RemainTime.Minutes,
-                        Hour = checkResponse.RemainTime.Hours,
-                        Sec = checkResponse.RemainTime.Seconds,
-                        State = checkResponse.State
+                        Info = new
+                        {
+                            Time = DateTime.Now.ToString(),
+                            BtcBlance = user.BtcBalance,
+                            Balance = user.Balance,
+                            ClaimRemainTime = new
+                            {
+                                Min = checkResponse.RemainTime.Minutes,
+                                Hour = checkResponse.RemainTime.Hours,
+                                Sec = checkResponse.RemainTime.Seconds,
+                                State = checkResponse.State
+                            }
+                        },
                     },
                     Message = "Ok",
                     StatusCode = StatusCodes.Status207MultiStatus
@@ -213,10 +222,18 @@ namespace BtcMiner.Services
                 Message = "Ok",
                 Data = new
                 {
-                    Min = _appSettings.ClaimTimeInMin,
-                    Hour = _appSettings.ClaimTimeInHour,
-                    Sec = _appSettings.ClaimTimeInSecond,
-                    Balance = newBalance
+                    Info = new
+                    {
+                        Time = DateTime.Now.ToString(),
+                        BtcBlance = user.BtcBalance,
+                        Balance = user.Balance,
+                        ClaimRemainTime = new
+                        {
+                            Min = _appSettings.ClaimTimeInMin,
+                            Hour = _appSettings.ClaimTimeInHour,
+                            Sec = _appSettings.ClaimTimeInSecond,
+                        }
+                    },
                 },
                 StatusCode = StatusCodes.Status200OK
             };
