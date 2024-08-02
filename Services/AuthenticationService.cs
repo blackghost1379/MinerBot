@@ -101,8 +101,15 @@ namespace BtcMiner.Services
             {
                 Message = "Ok",
                 Data = _minerDb
-                    .UserTasks.Where(x => x.UserId == user.Id)
-                    .Include(x => x.Task)
+                    .Tasks.Select(t => new
+                    {
+                        IsComplete = _minerDb
+                            .UserTasks.Where(ut => ut.UserId == user.Id && ut.TaskId == t.Id)
+                            .FirstOrDefault() != null
+                            ? true
+                            : false,
+                        Task = t
+                    })
                     .ToList(),
             };
         }
