@@ -300,7 +300,7 @@ namespace BtcMiner.Services
             {
                 //  user cant Claim
                 var time = appTime - remianTime;
-                return new ClaimStatus { State = ClaimStatus.CANT, RemainTime = time };
+                return new ClaimStatus { State = ClaimStatus.CANT, RemainTime = remianTime };
             }
         }
 
