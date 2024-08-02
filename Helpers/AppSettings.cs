@@ -4,6 +4,7 @@ namespace BtcMiner.Helpers
     {
         public string? Secret { get; set; }
         public int AddBalance { get; set; }
+        public int InviteAddBalanceCoin { get; set; }
         public int ClaimTimeInHour { get; set; }
         public int ClaimTimeInSecond { get; set; }
         public int ClaimTimeInMin { get; set; }

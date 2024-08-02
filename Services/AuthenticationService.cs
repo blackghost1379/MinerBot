@@ -171,6 +171,10 @@ namespace BtcMiner.Services
             };
             minerDb.Referals.Add(r);
             minerDb.SaveChanges();
+            var inviteReward = refferer.Balance + _appSettings.InviteAddBalanceCoin;
+            _minerDb
+                .Users.Where(u => u.Id == refferer.Id)
+                .ExecuteUpdate(u => u.SetProperty(p => p.Balance, inviteReward));
 
             return r;
         }
