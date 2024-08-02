@@ -209,9 +209,7 @@ namespace BtcMiner.Services
             var newBalance = user.Balance + _appSettings.AddBalance;
             _minerDb
                 .Users.Where(u => u.Id == user.Id)
-                .ExecuteUpdate(u =>
-                    u.SetProperty(p => p.Balance, user.Balance + _appSettings.AddBalance)
-                );
+                .ExecuteUpdate(u => u.SetProperty(p => p.Balance, newBalance));
 
             _minerDb.Transactions.Add(t);
             _minerDb.SaveChanges();
@@ -226,12 +224,13 @@ namespace BtcMiner.Services
                     {
                         Time = DateTime.Now.ToString(),
                         BtcBlance = user.BtcBalance,
-                        Balance = user.Balance,
+                        Balance = newBalance,
                         ClaimRemainTime = new
                         {
                             Min = checkResponse.RemainTime.Minutes,
                             Hour = checkResponse.RemainTime.Hours,
                             Sec = checkResponse.RemainTime.Seconds,
+                            State = checkResponse.State
                         }
                     },
                 },
