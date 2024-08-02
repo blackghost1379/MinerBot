@@ -7,3 +7,5 @@ Migrations
 BtcMiner.db
 
 BtcMiner.db
+.vscode/launch.json
+.vscode/tasks.json
