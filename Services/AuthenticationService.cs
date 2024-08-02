@@ -285,11 +285,13 @@ namespace BtcMiner.Services
 
             if (LastTransaction == null)
             {
-                return new ClaimStatus
-                {
-                    State = ClaimStatus.CAN,
-                    RemainTime = new TimeSpan(0, 0, 0)
-                };
+                var t = new Transaction { UserId = user.Id, Type = TransactionType.Claim };
+                _minerDb.Transactions.Add(t);
+                _minerDb.SaveChanges();
+
+                var remaineTime = DateTime.Now - t.Created;
+
+                return new ClaimStatus { State = ClaimStatus.CAN, RemainTime = remaineTime };
             }
 
             var remianTime = DateTime.Now - LastTransaction.Created;
