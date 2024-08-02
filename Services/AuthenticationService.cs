@@ -285,11 +285,7 @@ namespace BtcMiner.Services
                 return new ClaimStatus
                 {
                     State = ClaimStatus.CAN,
-                    RemainTime = new TimeSpan(
-                        _appSettings.ClaimTimeInHour,
-                        _appSettings.ClaimTimeInMin,
-                        _appSettings.ClaimTimeInSecond
-                    )
+                    RemainTime = new TimeSpan(0, 0, 0)
                 };
             }
 
@@ -306,11 +302,7 @@ namespace BtcMiner.Services
                 return new ClaimStatus
                 {
                     State = ClaimStatus.CAN,
-                    RemainTime = new TimeSpan(
-                        _appSettings.ClaimTimeInHour,
-                        _appSettings.ClaimTimeInMin,
-                        _appSettings.ClaimTimeInSecond
-                    )
+                    RemainTime = new TimeSpan(0, 0, 0)
                 };
             }
             else
