@@ -302,6 +302,7 @@ namespace BtcMiner.Services
             }
 
             var remianTime = DateTime.Now - LastTransaction.Created;
+
             var appTime = new TimeSpan(
                 _appSettings.ClaimTimeInHour,
                 _appSettings.ClaimTimeInMin,
