@@ -291,7 +291,8 @@ namespace BtcMiner.Services
                 .LastOrDefault(x => x.UserId == user.Id && x.Type == TransactionType.Claim);
 
             if (LastTransaction == null)
-            {
+            { 
+                // first step
                 var t = new Transaction { UserId = user.Id, Type = TransactionType.Claim };
                 _minerDb.Transactions.Add(t);
                 _minerDb.SaveChanges();
@@ -315,7 +316,7 @@ namespace BtcMiner.Services
                 return new ClaimStatus
                 {
                     State = ClaimStatus.CAN,
-                    RemainTime = new TimeSpan(0, 0, 0)
+                    RemainTime = appTime
                 };
             }
             else
