@@ -11,5 +11,6 @@ namespace BtcMiner.Entity
         public Task? Task { get; set; }
         public int TaskId { get; set; }
         public DateTime Created { get; set; } = DateTime.Now;
+        public int Status { get; set; } = BtcMiner.Helpers.TaskStatus.START;
     }
 }

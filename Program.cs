@@ -211,7 +211,13 @@ app.MapGet(
     )
     .RequireAuthorization();
 
-app.MapPost(
+app.MapGet("/tasks/claim/{taskId}", (int taskId, IAuthenticationService authenticationService,
+            HttpContext context) => authenticationService.DoClaimTask(context.Items["User"] as User, taskId)).RequireAuthorization();
+
+app.MapPost("/tasks/complete/", ([FromBody] BtcMiner.Models.CheckTaskRequest request, IAuthenticationService authenticationService,
+            HttpContext context) => authenticationService.DoCompleteTask(context.Items["User"] as User, request)).RequireAuthorization();
+
+/* app.MapPost(
         "/check/tasks/",
         (
             [FromBody] BtcMiner.Models.CheckTaskRequest request,
@@ -219,7 +225,7 @@ app.MapPost(
             HttpContext context
         ) => authenticationService.CheckTask(context.Items["User"] as User, request)
     )
-    .RequireAuthorization();
+    .RequireAuthorization(); */
 
 app.MapGet(
         "/remain/tasks",

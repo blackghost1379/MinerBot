@@ -32,5 +32,12 @@ namespace BtcMiner.Services
         /// <param name="user"></param>
         /// <returns></returns>
         AuthResponse ListTasks(User? user);
+        /// <summary>
+        /// Change Task Status to Claim
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
+        AuthResponse DoClaimTask(User? user, int taskId);
+        AuthResponse DoCompleteTask(User? user, CheckTaskRequest request);
     }
 }

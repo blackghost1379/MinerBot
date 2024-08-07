@@ -104,10 +104,8 @@ namespace BtcMiner.Services
                     .Tasks.Select(t => new
                     {
                         IsComplete = _minerDb
-                            .UserTasks.Where(ut => ut.UserId == user.Id && ut.TaskId == t.Id)
-                            .FirstOrDefault() != null
-                            ? true
-                            : false,
+                            .UserTasks.Where(ut => ut.UserId == user.Id && ut.TaskId == t.Id).FirstOrDefault() != null ? _minerDb
+                            .UserTasks.Where(ut => ut.UserId == user.Id && ut.TaskId == t.Id).FirstOrDefault()!.Status : BtcMiner.Helpers.TaskStatus.START,
                         Task = t
                     })
                     .ToList(),
@@ -238,9 +236,9 @@ namespace BtcMiner.Services
                         Balance = newBalance,
                         ClaimRemainTime = new
                         {
-                            Min = checkResponse.RemainTime.Minutes,
-                            Hour = checkResponse.RemainTime.Hours,
-                            Sec = checkResponse.RemainTime.Seconds,
+                            Min = 0,
+                            Hour = 0,
+                            Sec = 0,
                             State = checkResponse.State
                         }
                     },
@@ -291,7 +289,7 @@ namespace BtcMiner.Services
                 .LastOrDefault(x => x.UserId == user.Id && x.Type == TransactionType.Claim);
 
             if (LastTransaction == null)
-            { 
+            {
                 // first step
                 var t = new Transaction { UserId = user.Id, Type = TransactionType.Claim };
                 _minerDb.Transactions.Add(t);
@@ -478,6 +476,169 @@ namespace BtcMiner.Services
                     )
                     .ToList()
             };
+        }
+
+        public AuthResponse DoClaimTask(User? user, int taskId)
+        {
+            // get task rom db 
+            var userTask = _minerDb.UserTasks.Where(ut => ut.UserId == user!.Id && ut.TaskId == taskId).FirstOrDefault();
+
+            if (userTask == null)
+            {
+                // 
+                var ut = new UserTask
+                {
+                    UserId = user!.Id,
+                    TaskId = taskId,
+                    Status = BtcMiner.Helpers.TaskStatus.CLAIM
+                };
+                _minerDb.UserTasks.Add(ut);
+                _minerDb.SaveChanges();
+            }
+            else
+            {
+                _minerDb
+                .UserTasks.Where(u => u.Id == user!.Id && u.TaskId == taskId)
+                .ExecuteUpdate(u => u.SetProperty(p => p.Status, BtcMiner.Helpers.TaskStatus.CLAIM));
+            }
+
+            return new AuthResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Message = "OK",
+                Data = new { }
+            };
+        }
+
+        public AuthResponse DoCompleteTask(User? user, CheckTaskRequest request)
+        {
+            var userTask = _minerDb.UserTasks.Where(ut => ut.UserId == user!.Id && ut.TaskId == request.TaskId && ut.Status == BtcMiner.Helpers.TaskStatus.CLAIM).Include(ut => ut.Task).FirstOrDefault();
+
+            if (userTask == null)
+            {
+                return new AuthResponse
+                {
+                    StatusCode = StatusCodes.Status406NotAcceptable,
+                    Message = "Faild Task Not Found",
+                    Data = new { }
+                };
+            }
+
+            if (userTask.Task!.Type == TaskTypes.CHECK_CODE)
+            {
+                // check task code
+                var checkResp = userTask.Task.Value == request.TaskData;
+
+                if (checkResp)
+                {
+                    // add balance
+                    _minerDb
+                        .Users.Where(u => u.Id == user!.Id)
+                        .ExecuteUpdate(u =>
+                            u.SetProperty(p => p.Balance, user!.Balance + userTask.Task!.Balance)
+                        );
+                }
+
+                _minerDb
+                .UserTasks.Where(u => u.Id == user!.Id && u.TaskId == request.TaskId)
+                .ExecuteUpdate(u => u.SetProperty(p => p.Status, BtcMiner.Helpers.TaskStatus.DONE));
+
+                return new AuthResponse
+                {
+                    Message = "Ok",
+                    StatusCode = checkResp
+                        ? StatusCodes.Status200OK
+                        : StatusCodes.Status406NotAcceptable,
+                    Data = new { result = checkResp }
+                };
+            }
+            else if (userTask.Task!.Type == TaskTypes.JOIN && userTask.Task!.Name == "Telegram")
+            {
+                // check join channel
+                var memberCheckResp = _botService.CheckChannelMember(user!, userTask.Task!.Value!);
+
+                if (memberCheckResp)
+                {
+                    // add balance
+                    _minerDb
+                        .Users.Where(u => u.Id == user!.Id)
+                        .ExecuteUpdate(u =>
+                            u.SetProperty(p => p.Balance, user!.Balance + userTask.Task!.Balance)
+                        );
+
+                    _minerDb
+                .UserTasks.Where(u => u.Id == user!.Id && u.TaskId == request.TaskId)
+                .ExecuteUpdate(u => u.SetProperty(p => p.Status, BtcMiner.Helpers.TaskStatus.DONE));
+
+                    return new AuthResponse
+                    {
+                        Message = "Ok",
+                        StatusCode = StatusCodes.Status200OK,
+                        Data = new { }
+                    };
+                }
+                else
+                {
+                    return new AuthResponse
+                    {
+                        Message = "Fail",
+                        StatusCode = StatusCodes.Status406NotAcceptable,
+                        Data = new { }
+                    };
+                }
+            }
+            else if (userTask.Task!.Type == TaskTypes.INVITE)
+            {
+                // check refferals
+                var taskInviteCount = int.Parse(userTask.Task!.Value!);
+                var inviteCount = _minerDb.Referals.Where(r => r.UserId == user!.Id).Count();
+                var resp = inviteCount >= taskInviteCount;
+
+                if (resp)
+                {
+
+                    _minerDb
+                        .Users.Where(u => u.Id == user!.Id)
+                        .ExecuteUpdate(u =>
+                            u.SetProperty(p => p.Balance, user!.Balance + userTask.Task!.Balance)
+                        );
+                    _minerDb
+                .UserTasks.Where(u => u.Id == user!.Id && u.TaskId == request.TaskId)
+                .ExecuteUpdate(u => u.SetProperty(p => p.Status, BtcMiner.Helpers.TaskStatus.DONE));
+                }
+
+                return new AuthResponse
+                {
+                    Message = "Ok",
+                    StatusCode = resp
+                        ? StatusCodes.Status200OK
+                        : StatusCodes.Status406NotAcceptable,
+                    Data = new { result = resp }
+                };
+            }
+            else
+            {
+
+                _minerDb
+                    .Users.Where(u => u.Id == user!.Id)
+                    .ExecuteUpdate(u =>
+                        u.SetProperty(p => p.Balance, user!.Balance + userTask.Task!.Balance)
+                    );
+
+                _minerDb
+            .UserTasks.Where(u => u.Id == user!.Id && u.TaskId == request.TaskId)
+            .ExecuteUpdate(u => u.SetProperty(p => p.Status, BtcMiner.Helpers.TaskStatus.DONE));
+
+                return new AuthResponse
+                {
+                    Message = "Ok",
+                    StatusCode = StatusCodes.Status200OK,
+                    Data = new { }
+                };
+            }
+
+
+
         }
     }
 }
