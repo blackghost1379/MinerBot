@@ -126,7 +126,7 @@ namespace BtcMiner.Services
                         FirstName = refral.FirstName,
                         LastName = refral.LastName,
                         ProfilePicUrl = refral.ProfilePicUrl,
-                        Code = refral.Code
+                        Coin = refral.Coin
                     })
                     .ToList(),
             };
@@ -471,6 +471,14 @@ namespace BtcMiner.Services
                         ? StatusCodes.Status200OK
                         : StatusCodes.Status406NotAcceptable,
                     Data = new { result = resp }
+                };
+            }else if (userTask.Task!.Type == TaskTypes.BOOST_CHANNEL)
+            {
+                return new AuthResponse
+                {
+                    Message = "Not Implement",
+                    StatusCode = StatusCodes.Status200OK,
+                    Data = new { }
                 };
             }
             else
