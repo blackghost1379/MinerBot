@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace BtcMiner.Entity
 {
@@ -10,6 +11,8 @@ namespace BtcMiner.Entity
         public int Type { get; set; }
         public string? Value { get; set; }
         public int Balance { get; set; } = 0;
+        [JsonIgnore]
+        public string? Code { get; set; }
         public DateTime Created { get; set; } = DateTime.Now;
     }
 }

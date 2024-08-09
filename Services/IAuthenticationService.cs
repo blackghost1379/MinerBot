@@ -6,7 +6,7 @@ namespace BtcMiner.Services
     public interface IAuthenticationService
     {
         AuthResponse? Authenticate(AuthRequest model);
-        IEnumerable<User> GetAllUsers();
+
         User? GetById(int id);
         /// <summary>
         /// Returns all completed tasks
@@ -19,19 +19,7 @@ namespace BtcMiner.Services
         AuthResponse GetMe(User? user);
         AuthResponse GetServerTime();
         AuthResponse GetRemainClaimTime(User? user);
-        /// <summary>
-        /// Checks tasks and completes them if they are unfinished
-        /// </summary>
-        /// <param name="user"></param>
-        /// <param name="request"></param>
-        /// <returns></returns>
-        AuthResponse CheckTask(User? user, CheckTaskRequest request);
-        /// <summary>
-        /// Return Remain Task Of User
-        /// </summary>
-        /// <param name="user"></param>
-        /// <returns></returns>
-        AuthResponse ListTasks(User? user);
+
         /// <summary>
         /// Change Task Status to Claim
         /// </summary>

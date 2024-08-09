@@ -217,23 +217,6 @@ app.MapGet("/tasks/claim/{taskId}", (int taskId, IAuthenticationService authenti
 app.MapPost("/tasks/complete/", ([FromBody] BtcMiner.Models.CheckTaskRequest request, IAuthenticationService authenticationService,
             HttpContext context) => authenticationService.DoCompleteTask(context.Items["User"] as User, request)).RequireAuthorization();
 
-/* app.MapPost(
-        "/check/tasks/",
-        (
-            [FromBody] BtcMiner.Models.CheckTaskRequest request,
-            IAuthenticationService authenticationService,
-            HttpContext context
-        ) => authenticationService.CheckTask(context.Items["User"] as User, request)
-    )
-    .RequireAuthorization(); */
-
-app.MapGet(
-        "/remain/tasks",
-        (IAuthenticationService authenticationService, HttpContext context) =>
-            authenticationService.ListTasks(context.Items["User"] as User)
-    )
-    .RequireAuthorization();
-
 //app.UseCors(options => options.WithOrigins("btc-miner-rent.shop").AllowAnyHeader().AllowAnyMethod());
 
 app.Run();

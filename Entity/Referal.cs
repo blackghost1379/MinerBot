@@ -11,6 +11,7 @@ namespace BtcMiner.Entity
         public required string TelegramId { get; set; }
         public required string ProfilePicUrl { get; set; }
         public int UserId { get; set; }
+        public int Coin {get; set;} = 15000;
         public User User { get; set; } = null!;
         public DateTime Created { get; set; } = DateTime.Now;
     }

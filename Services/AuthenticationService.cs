@@ -53,7 +53,7 @@ namespace BtcMiner.Services
             }
 
             // check refferer for write refferal
-            if (!model.ReffererId.IsNullOrEmpty())
+            if (!model.ReffererId.IsNullOrEmpty() && model.ReffererId != u.TelegramId)
             {
                 var refferal = AddRefferal(_minerDb, model);
             }
@@ -354,7 +354,7 @@ namespace BtcMiner.Services
                 };
             }
 
-            if (task!.Type == TaskTypes.CHECK_CODE)
+            if (task!.Type == TaskTypes.CHECK_YOUTUBE_CODE)
             {
                 // check task code
                 var checkResp = task.Value == request.TaskData;
@@ -381,7 +381,7 @@ namespace BtcMiner.Services
                     Data = new { result = checkResp }
                 };
             }
-            else if (task.Type == TaskTypes.JOIN && task.Name == "Telegram")
+            else if (task.Type == TaskTypes.JOIN_TELEGRAM)
             {
                 // check join channel
                 var memberCheckResp = _botService.CheckChannelMember(user!, task.Value!);
@@ -524,7 +524,7 @@ namespace BtcMiner.Services
                 };
             }
 
-            if (userTask.Task!.Type == TaskTypes.CHECK_CODE)
+            if (userTask.Task!.Type == TaskTypes.CHECK_YOUTUBE_CODE)
             {
                 // check task code
                 var checkResp = userTask.Task.Value == request.TaskData;
@@ -552,7 +552,7 @@ namespace BtcMiner.Services
                     Data = new { result = checkResp }
                 };
             }
-            else if (userTask.Task!.Type == TaskTypes.JOIN && userTask.Task!.Name == "Telegram")
+            else if (userTask.Task!.Type == TaskTypes.JOIN_TELEGRAM)
             {
                 // check join channel
                 var memberCheckResp = _botService.CheckChannelMember(user!, userTask.Task!.Value!);

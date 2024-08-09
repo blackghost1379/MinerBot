@@ -57,57 +57,57 @@ public class MinerDb : DbContext
                 new BtcMiner.Entity.Task
                 {
                     Id = 1,
-                    Value = "https://x.com/BtcMiner",
-                    Name = "Twitter",
-                    Type = TaskTypes.JOIN
+                    Value = "https://t.me/BtcMiner",
+                    Name = "Telegram",
+                    Type = TaskTypes.JOIN_TELEGRAM
                 },
                 new BtcMiner.Entity.Task
                 {
                     Id = 2,
-                    Value = "https://facebook.com/BtcMiner",
-                    Name = "FaceBook",
-                    Type = TaskTypes.JOIN
+                    Value = "https://youtube.com/BtcMiner",
+                    Name = "YouTube Channel",
+                    Type = TaskTypes.JOIN_YOUTUBE
                 },
                 new BtcMiner.Entity.Task
                 {
                     Id = 3,
-                    Value = "https://youtube.com/BtcMiner",
-                    Name = "youTube",
-                    Type = TaskTypes.JOIN
+                    Value = "testWord",
+                    Name = "Youtube Code",
+                    Type = TaskTypes.CHECK_YOUTUBE_CODE
                 },
                 new BtcMiner.Entity.Task
                 {
                     Id = 4,
-                    Value = "@test_channel156",
-                    Name = "Telegram",
-                    Type = TaskTypes.JOIN
+                    Value = "100",
+                    Name = "Invite 100 Friend",
+                    Type = TaskTypes.INVITE
                 },
                 new BtcMiner.Entity.Task
                 {
                     Id = 5,
-                    Value = "5",
-                    Name = "Invite 5 Friend",
+                    Value = "200",
+                    Name = "Invite 200 Friend",
                     Type = TaskTypes.INVITE
                 },
                 new BtcMiner.Entity.Task
                 {
                     Id = 6,
-                    Value = "10",
-                    Name = "Invite 10 Friend",
+                    Value = "300",
+                    Name = "Invite 300 Friend",
                     Type = TaskTypes.INVITE
                 },
                 new BtcMiner.Entity.Task
                 {
                     Id = 7,
-                    Value = "15",
-                    Name = "Invite 15 Friend",
+                    Value = "400",
+                    Name = "Invite 400 Friend",
                     Type = TaskTypes.INVITE
                 },
                 new BtcMiner.Entity.Task
                 {
                     Id = 8,
-                    Value = "20",
-                    Name = "Invite 20 Friend",
+                    Value = "500",
+                    Name = "Invite 500 Friend",
                     Type = TaskTypes.INVITE
                 }
             );

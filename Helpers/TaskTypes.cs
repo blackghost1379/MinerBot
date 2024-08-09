@@ -2,8 +2,9 @@ namespace BtcMiner.Helpers
 {
     class TaskTypes
     {
-        public static int INVITE = 0;
-        public static int JOIN = 1;
-        public static int CHECK_CODE = 2;
+        public static int JOIN_TELEGRAM = 1;
+        public static int JOIN_YOUTUBE = 2;
+        public static int CHECK_YOUTUBE_CODE = 3;
+        public static int INVITE = 4;
     }
 }
