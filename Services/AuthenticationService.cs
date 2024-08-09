@@ -47,6 +47,9 @@ namespace BtcMiner.Services
                     AllowWritePm = model.AllowWritePm,
                     IsPremium = model.IsPremium,
                     ProfilePicUrl = model.ProfilePicUrl,
+                    ClaimCoins = _appSettings.DefaultClaimCoinsPerHour,
+                    ClaimHour = _appSettings.DefaultClaimHour,
+                    ClaimRefferal = _appSettings.DefaultInviteCoinsPerUser
                 };
                 _minerDb.Users.Add(u);
                 _minerDb.SaveChanges();
@@ -73,6 +76,9 @@ namespace BtcMiner.Services
                         Time = DateTime.Now.ToString(),
                         BtcBlance = u.BtcBalance,
                         Balance = u.Balance,
+                        ClaimCoins = u.ClaimCoins,
+                        ClaimHour = u.ClaimHour,
+                        ClaimRefferal = u.ClaimRefferal,
                         ClaimRemainTime = new
                         {
                             Min = checkResp.RemainTime.Minutes,
@@ -85,10 +91,6 @@ namespace BtcMiner.Services
             };
         }
 
-        public IEnumerable<User> GetAllUsers()
-        {
-            throw new NotImplementedException();
-        }
 
         public User? GetById(int id)
         {
@@ -123,7 +125,8 @@ namespace BtcMiner.Services
                     {
                         FirstName = refral.FirstName,
                         LastName = refral.LastName,
-                        ProfilePicUrl = refral.ProfilePicUrl
+                        ProfilePicUrl = refral.ProfilePicUrl,
+                        Code = refral.Code
                     })
                     .ToList(),
             };
@@ -172,11 +175,12 @@ namespace BtcMiner.Services
                 TelegramId = model.UserId,
                 FirstName = model.FirstName,
                 LastName = model.LastName,
-                ProfilePicUrl = model.ProfilePicUrl
+                ProfilePicUrl = model.ProfilePicUrl,
+                Coin = refferer.ClaimRefferal
             };
             minerDb.Referals.Add(r);
             minerDb.SaveChanges();
-            var inviteReward = refferer.Balance + _appSettings.InviteAddBalanceCoin;
+            var inviteReward = refferer.Balance + refferer.ClaimRefferal;
             _minerDb
                 .Users.Where(u => u.Id == refferer.Id)
                 .ExecuteUpdate(u => u.SetProperty(p => p.Balance, inviteReward));
@@ -198,6 +202,9 @@ namespace BtcMiner.Services
                             Time = DateTime.Now.ToString(),
                             BtcBlance = user.BtcBalance,
                             Balance = user.Balance,
+                        ClaimCoins = user.ClaimCoins,
+                        ClaimHour = user.ClaimHour,
+                        ClaimRefferal = user.ClaimRefferal,
                             ClaimRemainTime = new
                             {
                                 Min = checkResponse.RemainTime.Minutes,
@@ -215,7 +222,7 @@ namespace BtcMiner.Services
             var t = new Transaction { UserId = user.Id, Type = TransactionType.Claim };
 
             // add user balance
-            var newBalance = user.Balance + _appSettings.AddBalance;
+            var newBalance = user.Balance + user.ClaimCoins;
             _minerDb
                 .Users.Where(u => u.Id == user.Id)
                 .ExecuteUpdate(u => u.SetProperty(p => p.Balance, newBalance));
@@ -234,6 +241,9 @@ namespace BtcMiner.Services
                         Time = DateTime.Now.ToString(),
                         BtcBlance = user.BtcBalance,
                         Balance = newBalance,
+                        ClaimCoins = user.ClaimCoins,
+                        ClaimHour = user.ClaimHour,
+                        ClaimRefferal = user.ClaimRefferal,
                         ClaimRemainTime = new
                         {
                             Min = 0,
@@ -303,7 +313,7 @@ namespace BtcMiner.Services
             var remianTime = DateTime.Now - LastTransaction.Created;
 
             var appTime = new TimeSpan(
-                _appSettings.ClaimTimeInHour,
+                user.ClaimHour,
                 _appSettings.ClaimTimeInMin,
                 _appSettings.ClaimTimeInSecond
             );
@@ -323,159 +333,6 @@ namespace BtcMiner.Services
                 var time = appTime - remianTime;
                 return new ClaimStatus { State = ClaimStatus.CANT, RemainTime = remianTime };
             }
-        }
-
-        public AuthResponse CheckTask(User? user, CheckTaskRequest request)
-        {
-            var latestTask = _minerDb
-                .UserTasks.Where(ut => ut.TaskId == request.TaskId && ut.UserId == user!.Id)
-                .FirstOrDefault();
-
-            if (latestTask != null)
-            {
-                // This task has already been done and the reward has been received
-                return new AuthResponse
-                {
-                    Message = "Task Doned !",
-                    StatusCode = StatusCodes.Status406NotAcceptable,
-                    Data = new { }
-                };
-            }
-
-            var task = _minerDb.Tasks.Where(t => t.Id == request.TaskId).FirstOrDefault();
-
-            if (task == null)
-            {
-                return new AuthResponse
-                {
-                    Message = "Task Not Found",
-                    StatusCode = StatusCodes.Status406NotAcceptable,
-                    Data = new { }
-                };
-            }
-
-            if (task!.Type == TaskTypes.CHECK_YOUTUBE_CODE)
-            {
-                // check task code
-                var checkResp = task.Value == request.TaskData;
-
-                if (checkResp)
-                {
-                    // add balance
-                    _minerDb
-                        .Users.Where(u => u.Id == user!.Id)
-                        .ExecuteUpdate(u =>
-                            u.SetProperty(p => p.Balance, user!.Balance + task.Balance)
-                        );
-                    var userTask = new UserTask { TaskId = task.Id, UserId = user!.Id };
-                    _minerDb.UserTasks.Add(userTask);
-                    _minerDb.SaveChanges();
-                }
-
-                return new AuthResponse
-                {
-                    Message = "Ok",
-                    StatusCode = checkResp
-                        ? StatusCodes.Status200OK
-                        : StatusCodes.Status406NotAcceptable,
-                    Data = new { result = checkResp }
-                };
-            }
-            else if (task.Type == TaskTypes.JOIN_TELEGRAM)
-            {
-                // check join channel
-                var memberCheckResp = _botService.CheckChannelMember(user!, task.Value!);
-
-                if (memberCheckResp)
-                {
-                    // add balance
-                    _minerDb
-                        .Users.Where(u => u.Id == user!.Id)
-                        .ExecuteUpdate(u =>
-                            u.SetProperty(p => p.Balance, user!.Balance + task.Balance)
-                        );
-                    var userTask = new UserTask { TaskId = task.Id, UserId = user!.Id };
-                    _minerDb.UserTasks.Add(userTask);
-                    _minerDb.SaveChanges();
-                    return new AuthResponse
-                    {
-                        Message = "Ok",
-                        StatusCode = StatusCodes.Status200OK,
-                        Data = new { }
-                    };
-                }
-                else
-                {
-                    return new AuthResponse
-                    {
-                        Message = "Fail",
-                        StatusCode = StatusCodes.Status406NotAcceptable,
-                        Data = new { }
-                    };
-                }
-            }
-            else if (task.Type == TaskTypes.INVITE)
-            {
-                // check refferals
-                var taskInviteCount = int.Parse(task.Value!);
-                var inviteCount = _minerDb.Referals.Where(r => r.UserId == user!.Id).Count();
-                var resp = inviteCount >= taskInviteCount;
-
-                if (resp)
-                {
-                    // add task and save to db
-                    _minerDb
-                        .Users.Where(u => u.Id == user!.Id)
-                        .ExecuteUpdate(u =>
-                            u.SetProperty(p => p.Balance, user!.Balance + task.Balance)
-                        );
-                    var userTask = new UserTask { TaskId = task.Id, UserId = user!.Id };
-                    _minerDb.UserTasks.Add(userTask);
-                    _minerDb.SaveChanges();
-                }
-
-                return new AuthResponse
-                {
-                    Message = "Ok",
-                    StatusCode = resp
-                        ? StatusCodes.Status200OK
-                        : StatusCodes.Status406NotAcceptable,
-                    Data = new { result = resp }
-                };
-            }
-            else
-            {
-                // add task and save to db
-                _minerDb
-                    .Users.Where(u => u.Id == user!.Id)
-                    .ExecuteUpdate(u =>
-                        u.SetProperty(p => p.Balance, user!.Balance + task.Balance)
-                    );
-                var userTask = new UserTask { TaskId = task.Id, UserId = user!.Id };
-                _minerDb.UserTasks.Add(userTask);
-                _minerDb.SaveChanges();
-                return new AuthResponse
-                {
-                    Message = "Ok",
-                    StatusCode = StatusCodes.Status200OK,
-                    Data = new { }
-                };
-            }
-        }
-
-        public AuthResponse ListTasks(User? user)
-        {
-            return new AuthResponse
-            {
-                Message = "OK",
-                Data = _minerDb
-                    .Tasks.Where(t =>
-                        _minerDb.UserTasks.FirstOrDefault(ut => ut.TaskId == t.Id) == null
-                            ? true
-                            : false
-                    )
-                    .ToList()
-            };
         }
 
         public AuthResponse DoClaimTask(User? user, int taskId)

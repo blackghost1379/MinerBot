@@ -19,8 +19,8 @@ namespace BtcMiner.Entity
         public double BtcBalance { get; set; } = 0.0;
         public DateTime Created { get; set; } = DateTime.Now;
         public bool isBan { get; set; } = false;
-        public int ClaimCoins { get; set; }
-        public int ClaimHour { get; set; }
+        public int ClaimCoins { get; set; } = 50000;
+        public int ClaimHour { get; set; } = 3;
         public int ClaimRefferal { get; set; } = 15000;
 
         [JsonIgnore]
